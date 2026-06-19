@@ -1,0 +1,7 @@
+shop_id,shop_name,bldg,substitute_authorized_per_TO,state
+S01,Corrosion Control,B214,True,California
+S02,Paint Shop,B167,False,CA
+S03,Sheet Metal,B214,True,Calif.
+S04,Wheel & Brake,B89,False,California
+S05,NDI Lab,B45,False,CA
+S06,Fuel Cell,B312,False,California

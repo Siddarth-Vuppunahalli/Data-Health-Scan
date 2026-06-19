@@ -1,0 +1,6 @@
+hmid_id,nsn,material_name,cas,manufacturer,mfr_state,shelf_life_months,uom,hazard_class
+HM-001,8010-01-555-1234,MIL-PRF-23377J Class C2 Primer,18540-29-9,SynthCoat Industries,California,12,KT,Cr(VI) carcinogen
+HM-002,8010-01-555-1234,Chromated Epoxy Primer 23377,18540-29-9,SynthCoat Industries,CA,12,KT,Cr(VI) carcinogen
+HM-003,8010-01-555-1234,"PRIMER, EPOXY, CHROMATE",18540-29-9,SynthCoat Industries,Calif.,12,KT,Cr(VI) carcinogen
+HM-004,8010-01-555-1234,chrome primer kit,18540-29-9,SynthCoat Industries,California,12,KT,Cr(VI) carcinogen
+HM-005,8010-01-555-1234,Primer-Cr 23377C2,18540-29-9,SynthCoat Industries,CA,12,KT,Cr(VI) carcinogen

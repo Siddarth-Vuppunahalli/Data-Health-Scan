@@ -1,0 +1,208 @@
+sample_id,person_id,shop,sample_date,cr6_ug_m3,action_level,pel,above_action
+IH-0001,P-213,Sheet Metal,2026-02-01,2.24,2.5,5.0,False
+IH-0002,P-213,Sheet Metal,2025-11-19,3.54,2.5,5.0,True
+IH-0003,P-022,Wheel & Brake,2025-09-03,0.45,2.5,5.0,False
+IH-0004,P-022,Wheel & Brake,2025-12-13,6.48,2.5,5.0,True
+IH-0005,P-022,Wheel & Brake,2026-02-06,1.18,2.5,5.0,False
+IH-0006,P-024,Fuel Cell,2025-10-02,1.82,2.5,5.0,False
+IH-0007,P-024,Fuel Cell,2025-09-22,3.41,2.5,5.0,True
+IH-0008,P-111,Sheet Metal,2026-03-16,4.9,2.5,5.0,True
+IH-0009,P-025,Corrosion Control,2025-12-25,1.17,2.5,5.0,False
+IH-0010,P-025,Corrosion Control,2026-02-14,5.26,2.5,5.0,True
+IH-0011,P-025,Corrosion Control,2026-04-17,0.53,2.5,5.0,False
+IH-0012,P-191,NDI Lab,2026-03-20,0.4,2.5,5.0,False
+IH-0013,P-191,NDI Lab,2025-12-10,2.88,2.5,5.0,True
+IH-0014,P-191,NDI Lab,2025-11-25,2.29,2.5,5.0,False
+IH-0015,P-190,Wheel & Brake,2025-09-16,0.99,2.5,5.0,False
+IH-0016,P-190,Wheel & Brake,2025-11-05,6.48,2.5,5.0,True
+IH-0017,P-096,Fuel Cell,2026-02-03,5.2,2.5,5.0,True
+IH-0018,P-096,Fuel Cell,2025-09-14,1.13,2.5,5.0,False
+IH-0019,P-208,Wheel & Brake,2026-02-19,7.39,2.5,5.0,True
+IH-0020,P-034,Wheel & Brake,2026-03-10,1.79,2.5,5.0,False
+IH-0021,P-034,Wheel & Brake,2025-09-11,3.2,2.5,5.0,True
+IH-0022,P-143,NDI Lab,2026-02-03,6.93,2.5,5.0,True
+IH-0023,P-016,Wheel & Brake,2026-03-17,3.87,2.5,5.0,True
+IH-0024,P-016,Wheel & Brake,2026-01-24,0.47,2.5,5.0,False
+IH-0025,P-151,Corrosion Control,2025-11-03,4.33,2.5,5.0,True
+IH-0026,P-151,Corrosion Control,2025-10-17,1.37,2.5,5.0,False
+IH-0027,P-144,Fuel Cell,2026-02-12,7.31,2.5,5.0,True
+IH-0028,P-144,Fuel Cell,2025-11-08,1.83,2.5,5.0,False
+IH-0029,P-144,Fuel Cell,2026-01-07,0.52,2.5,5.0,False
+IH-0030,P-227,NDI Lab,2025-10-06,6.55,2.5,5.0,True
+IH-0031,P-085,Corrosion Control,2026-04-22,1.27,2.5,5.0,False
+IH-0032,P-085,Corrosion Control,2026-02-28,7.41,2.5,5.0,True
+IH-0033,P-085,Corrosion Control,2026-02-05,2.34,2.5,5.0,False
+IH-0034,P-172,Wheel & Brake,2026-01-26,5.04,2.5,5.0,True
+IH-0035,P-172,Wheel & Brake,2025-09-12,0.88,2.5,5.0,False
+IH-0036,P-032,Paint Shop,2026-04-02,4.21,2.5,5.0,True
+IH-0037,P-032,Paint Shop,2026-01-03,0.42,2.5,5.0,False
+IH-0038,P-032,Paint Shop,2025-10-20,1.65,2.5,5.0,False
+IH-0039,P-106,Wheel & Brake,2026-05-26,1.11,2.5,5.0,False
+IH-0040,P-106,Wheel & Brake,2025-09-15,1.85,2.5,5.0,False
+IH-0041,P-106,Wheel & Brake,2025-12-11,7.33,2.5,5.0,True
+IH-0042,P-091,Corrosion Control,2025-09-15,1.35,2.5,5.0,False
+IH-0043,P-091,Corrosion Control,2026-02-23,3.14,2.5,5.0,True
+IH-0044,P-091,Corrosion Control,2025-11-02,0.48,2.5,5.0,False
+IH-0045,P-171,Sheet Metal,2026-05-17,7.75,2.5,5.0,True
+IH-0046,P-193,Corrosion Control,2026-01-13,4.49,2.5,5.0,True
+IH-0047,P-193,Corrosion Control,2026-02-22,1.16,2.5,5.0,False
+IH-0048,P-193,Corrosion Control,2026-02-03,1.56,2.5,5.0,False
+IH-0049,P-109,Corrosion Control,2026-03-10,5.5,2.5,5.0,True
+IH-0050,P-109,Corrosion Control,2025-11-11,0.83,2.5,5.0,False
+IH-0051,P-185,NDI Lab,2026-01-21,7.37,2.5,5.0,True
+IH-0052,P-014,Paint Shop,2025-10-10,1.12,2.5,5.0,False
+IH-0053,P-014,Paint Shop,2026-02-27,1.47,2.5,5.0,False
+IH-0054,P-014,Paint Shop,2026-05-03,3.26,2.5,5.0,True
+IH-0055,P-074,Paint Shop,2026-02-01,1.19,2.5,5.0,False
+IH-0056,P-074,Paint Shop,2025-11-07,1.06,2.5,5.0,False
+IH-0057,P-074,Paint Shop,2026-04-07,4.38,2.5,5.0,True
+IH-0058,P-154,Wheel & Brake,2026-01-28,3.41,2.5,5.0,True
+IH-0059,P-080,Paint Shop,2025-11-20,6.04,2.5,5.0,True
+IH-0060,P-221,NDI Lab,2025-11-24,3.44,2.5,5.0,True
+IH-0061,P-221,NDI Lab,2026-03-12,1.22,2.5,5.0,False
+IH-0062,P-027,Sheet Metal,2026-04-20,0.8,2.5,5.0,False
+IH-0063,P-027,Sheet Metal,2026-04-08,0.9,2.5,5.0,False
+IH-0064,P-027,Sheet Metal,2026-01-26,5.38,2.5,5.0,True
+IH-0065,P-148,Wheel & Brake,2026-04-15,4.51,2.5,5.0,True
+IH-0066,P-148,Wheel & Brake,2026-03-17,1.92,2.5,5.0,False
+IH-0067,P-130,Wheel & Brake,2025-12-26,2.33,2.5,5.0,False
+IH-0068,P-130,Wheel & Brake,2026-01-02,5.74,2.5,5.0,True
+IH-0069,P-130,Wheel & Brake,2026-02-18,1.65,2.5,5.0,False
+IH-0070,P-055,Corrosion Control,2025-11-09,4.08,2.5,5.0,True
+IH-0071,P-040,Wheel & Brake,2025-10-08,6.92,2.5,5.0,True
+IH-0072,P-040,Wheel & Brake,2026-02-01,2.02,2.5,5.0,False
+IH-0073,P-169,Corrosion Control,2026-02-08,4.66,2.5,5.0,True
+IH-0074,P-169,Corrosion Control,2025-10-12,1.11,2.5,5.0,False
+IH-0075,P-124,Wheel & Brake,2025-10-27,4.26,2.5,5.0,True
+IH-0076,P-058,Wheel & Brake,2025-11-05,1.0,2.5,5.0,False
+IH-0077,P-058,Wheel & Brake,2026-04-23,0.38,2.5,5.0,False
+IH-0078,P-058,Wheel & Brake,2026-04-15,6.92,2.5,5.0,True
+IH-0079,P-028,Wheel & Brake,2025-09-09,7.31,2.5,5.0,True
+IH-0080,P-028,Wheel & Brake,2025-11-18,0.75,2.5,5.0,False
+IH-0081,P-028,Wheel & Brake,2026-05-14,2.27,2.5,5.0,False
+IH-0082,P-090,Fuel Cell,2025-10-02,3.84,2.5,5.0,True
+IH-0083,P-230,Paint Shop,2026-04-03,5.92,2.5,5.0,True
+IH-0084,P-095,NDI Lab,2025-09-21,5.7,2.5,5.0,True
+IH-0085,P-030,Fuel Cell,2025-11-10,0.81,2.5,5.0,False
+IH-0086,P-030,Fuel Cell,2026-02-08,1.2,2.5,5.0,False
+IH-0087,P-030,Fuel Cell,2025-11-22,5.57,2.5,5.0,True
+IH-0088,P-196,Wheel & Brake,2026-02-03,5.32,2.5,5.0,True
+IH-0089,P-196,Wheel & Brake,2026-05-17,2.3,2.5,5.0,False
+IH-0090,P-196,Wheel & Brake,2026-05-18,1.95,2.5,5.0,False
+IH-0091,P-072,Fuel Cell,2025-09-21,7.14,2.5,5.0,True
+IH-0092,P-147,Sheet Metal,2025-09-12,0.83,2.5,5.0,False
+IH-0093,P-147,Sheet Metal,2026-02-08,6.7,2.5,5.0,True
+IH-0094,P-204,Fuel Cell,2026-02-05,1.62,2.5,5.0,False
+IH-0095,P-204,Fuel Cell,2026-05-11,0.39,2.5,5.0,False
+IH-0096,P-204,Fuel Cell,2025-11-27,6.83,2.5,5.0,True
+IH-0097,P-110,Paint Shop,2026-04-21,2.36,2.5,5.0,False
+IH-0098,P-110,Paint Shop,2025-11-03,3.55,2.5,5.0,True
+IH-0099,P-110,Paint Shop,2026-04-02,1.8,2.5,5.0,False
+IH-0100,P-226,Wheel & Brake,2025-12-02,2.83,2.5,5.0,True
+IH-0101,P-226,Wheel & Brake,2026-01-17,0.96,2.5,5.0,False
+IH-0102,P-160,Wheel & Brake,2025-12-10,0.83,2.5,5.0,False
+IH-0103,P-160,Wheel & Brake,2025-09-28,4.46,2.5,5.0,True
+IH-0104,P-158,Paint Shop,2026-02-14,0.87,2.5,5.0,False
+IH-0105,P-158,Paint Shop,2026-04-13,7.23,2.5,5.0,True
+IH-0106,P-158,Paint Shop,2025-11-16,1.01,2.5,5.0,False
+IH-0107,P-173,NDI Lab,2026-05-09,1.07,2.5,5.0,False
+IH-0108,P-173,NDI Lab,2026-03-03,6.77,2.5,5.0,True
+IH-0109,P-173,NDI Lab,2025-11-18,1.2,2.5,5.0,False
+IH-0110,P-165,Sheet Metal,2026-02-22,0.52,2.5,5.0,False
+IH-0111,P-165,Sheet Metal,2026-04-20,4.14,2.5,5.0,True
+IH-0112,P-201,Sheet Metal,2026-04-12,0.65,2.5,5.0,False
+IH-0113,P-201,Sheet Metal,2026-02-20,4.93,2.5,5.0,True
+IH-0114,P-201,Sheet Metal,2026-01-21,2.4,2.5,5.0,False
+IH-0115,P-007,Corrosion Control,2026-03-12,6.09,2.5,5.0,True
+IH-0116,P-156,Fuel Cell,2025-09-05,1.73,2.5,5.0,False
+IH-0117,P-156,Fuel Cell,2026-04-02,2.08,2.5,5.0,False
+IH-0118,P-156,Fuel Cell,2025-12-25,3.26,2.5,5.0,True
+IH-0119,P-206,Paint Shop,2025-09-20,1.06,2.5,5.0,False
+IH-0120,P-206,Paint Shop,2026-04-12,3.4,2.5,5.0,True
+IH-0121,P-206,Paint Shop,2025-10-19,1.08,2.5,5.0,False
+IH-0122,P-178,Wheel & Brake,2026-01-08,4.67,2.5,5.0,True
+IH-0123,P-069,Sheet Metal,2026-04-17,6.43,2.5,5.0,True
+IH-0124,P-008,Paint Shop,2026-01-23,3.96,2.5,5.0,True
+IH-0125,P-008,Paint Shop,2026-01-23,1.24,2.5,5.0,False
+IH-0126,P-047,NDI Lab,2025-10-15,3.24,2.5,5.0,True
+IH-0127,P-047,NDI Lab,2026-04-03,0.66,2.5,5.0,False
+IH-0128,P-235,Corrosion Control,2025-11-06,1.55,2.5,5.0,False
+IH-0129,P-108,Fuel Cell,2026-02-27,2.13,2.5,5.0,False
+IH-0130,P-231,Sheet Metal,2025-09-27,2.0,2.5,5.0,False
+IH-0131,P-118,Wheel & Brake,2025-10-02,2.19,2.5,5.0,False
+IH-0132,P-021,Sheet Metal,2026-01-21,0.56,2.5,5.0,False
+IH-0133,P-188,Paint Shop,2026-03-20,1.51,2.5,5.0,False
+IH-0134,P-186,Fuel Cell,2026-04-21,1.3,2.5,5.0,False
+IH-0135,P-100,Wheel & Brake,2026-01-16,0.64,2.5,5.0,False
+IH-0136,P-102,Fuel Cell,2026-03-10,1.1,2.5,5.0,False
+IH-0137,P-056,Paint Shop,2025-09-06,1.07,2.5,5.0,False
+IH-0138,P-220,Wheel & Brake,2026-04-15,0.55,2.5,5.0,False
+IH-0139,P-061,Corrosion Control,2025-11-11,2.0,2.5,5.0,False
+IH-0140,P-122,Paint Shop,2026-02-24,2.27,2.5,5.0,False
+IH-0141,P-176,Paint Shop,2026-02-13,0.39,2.5,5.0,False
+IH-0142,P-077,NDI Lab,2026-02-17,1.34,2.5,5.0,False
+IH-0143,P-045,Sheet Metal,2026-02-08,1.13,2.5,5.0,False
+IH-0144,P-068,Paint Shop,2026-01-15,0.65,2.5,5.0,False
+IH-0145,P-050,Paint Shop,2025-10-02,0.74,2.5,5.0,False
+IH-0146,P-081,Sheet Metal,2026-03-28,1.45,2.5,5.0,False
+IH-0147,P-168,Fuel Cell,2025-12-28,2.09,2.5,5.0,False
+IH-0148,P-009,Sheet Metal,2026-02-19,1.69,2.5,5.0,False
+IH-0149,P-225,Sheet Metal,2025-12-25,0.45,2.5,5.0,False
+IH-0150,P-189,Sheet Metal,2026-05-15,1.2,2.5,5.0,False
+IH-0151,P-198,Fuel Cell,2026-01-16,0.15,2.5,5.0,False
+IH-0152,P-125,NDI Lab,2026-03-17,1.11,2.5,5.0,False
+IH-0153,P-159,Sheet Metal,2025-12-07,1.38,2.5,5.0,False
+IH-0154,P-214,Wheel & Brake,2025-09-02,0.72,2.5,5.0,False
+IH-0155,P-048,Fuel Cell,2026-04-10,1.28,2.5,5.0,False
+IH-0156,P-035,NDI Lab,2025-10-14,0.39,2.5,5.0,False
+IH-0157,P-236,Paint Shop,2026-01-24,0.9,2.5,5.0,False
+IH-0158,P-105,Sheet Metal,2026-03-12,0.2,2.5,5.0,False
+IH-0159,P-133,Corrosion Control,2025-09-19,1.34,2.5,5.0,False
+IH-0160,P-163,Corrosion Control,2026-02-18,0.73,2.5,5.0,False
+IH-0161,P-181,Corrosion Control,2026-03-17,1.09,2.5,5.0,False
+IH-0162,P-137,NDI Lab,2026-05-09,1.92,2.5,5.0,False
+IH-0163,P-136,Wheel & Brake,2025-10-05,2.25,2.5,5.0,False
+IH-0164,P-026,Paint Shop,2026-03-12,1.85,2.5,5.0,False
+IH-0165,P-046,Wheel & Brake,2026-02-18,2.17,2.5,5.0,False
+IH-0166,P-239,NDI Lab,2025-11-07,1.43,2.5,5.0,False
+IH-0167,P-194,Paint Shop,2026-03-17,0.19,2.5,5.0,False
+IH-0168,P-152,Paint Shop,2025-09-05,1.67,2.5,5.0,False
+IH-0169,P-210,Fuel Cell,2026-04-17,1.11,2.5,5.0,False
+IH-0170,P-179,NDI Lab,2026-05-05,0.82,2.5,5.0,False
+IH-0171,P-237,Sheet Metal,2026-02-06,0.96,2.5,5.0,False
+IH-0172,P-192,Fuel Cell,2026-01-19,0.84,2.5,5.0,False
+IH-0173,P-063,Sheet Metal,2026-05-18,1.18,2.5,5.0,False
+IH-0174,P-207,Sheet Metal,2026-01-16,1.89,2.5,5.0,False
+IH-0175,P-142,Wheel & Brake,2026-02-11,1.58,2.5,5.0,False
+IH-0176,P-174,Fuel Cell,2026-03-19,0.78,2.5,5.0,False
+IH-0177,P-019,Corrosion Control,2025-09-20,1.14,2.5,5.0,False
+IH-0178,P-222,Fuel Cell,2025-12-24,0.21,2.5,5.0,False
+IH-0179,P-054,Fuel Cell,2026-04-06,1.25,2.5,5.0,False
+IH-0180,P-103,Corrosion Control,2026-03-05,1.91,2.5,5.0,False
+IH-0181,P-033,Sheet Metal,2025-12-02,1.36,2.5,5.0,False
+IH-0182,P-031,Corrosion Control,2025-10-07,0.14,2.5,5.0,False
+IH-0183,P-057,Sheet Metal,2026-02-14,0.43,2.5,5.0,False
+IH-0184,P-234,Fuel Cell,2025-12-14,1.2,2.5,5.0,False
+IH-0185,P-120,Fuel Cell,2026-04-28,1.97,2.5,5.0,False
+IH-0186,P-042,Fuel Cell,2025-09-23,0.4,2.5,5.0,False
+IH-0187,P-228,Fuel Cell,2025-12-18,0.82,2.5,5.0,False
+IH-0188,P-088,Wheel & Brake,2026-04-17,0.93,2.5,5.0,False
+IH-0189,P-150,Fuel Cell,2025-11-15,2.11,2.5,5.0,False
+IH-0190,P-051,Sheet Metal,2026-02-18,0.88,2.5,5.0,False
+IH-0191,P-140,Paint Shop,2026-01-20,1.17,2.5,5.0,False
+IH-0192,P-013,Corrosion Control,2025-12-09,1.33,2.5,5.0,False
+IH-0193,P-182,Paint Shop,2025-12-10,1.8,2.5,5.0,False
+IH-0194,P-038,Paint Shop,2025-12-23,1.65,2.5,5.0,False
+IH-0195,P-209,NDI Lab,2026-02-16,0.87,2.5,5.0,False
+IH-0196,P-094,Wheel & Brake,2026-01-10,0.37,2.5,5.0,False
+IH-0197,P-219,Sheet Metal,2026-05-13,2.07,2.5,5.0,False
+IH-0198,P-203,NDI Lab,2026-03-27,0.86,2.5,5.0,False
+IH-0199,P-107,NDI Lab,2025-11-10,0.19,2.5,5.0,False
+IH-0200,P-053,NDI Lab,2025-10-12,2.13,2.5,5.0,False
+IH-0201,P-104,Paint Shop,2026-01-24,1.15,2.5,5.0,False
+IH-0202,P-092,Paint Shop,2025-12-27,1.28,2.5,5.0,False
+IH-0203,P-015,Sheet Metal,2026-05-23,0.7,2.5,5.0,False
+IH-0204,P-086,Paint Shop,2025-10-20,1.73,2.5,5.0,False
+IH-0205,P-112,Wheel & Brake,2025-12-08,0.21,2.5,5.0,False
+IH-0206,P-217,Corrosion Control,2026-05-08,1.5,2.5,5.0,False
+IH-0207,P-101,NDI Lab,2025-09-04,1.01,2.5,5.0,False

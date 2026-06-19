@@ -1,0 +1,13 @@
+{
+ "q1_exposed_above_action_level": 60,
+ "q1_overdue_on_surveillance": 14,
+ "q1_overdue_in_substitute_shops": 3,
+ "q2_overorder_3yr_usd": 639450.0,
+ "withheld_demo": "surveillance for Fuel Cell (S06): no rows since 2026-03 -> IES low, TDD-H RETRIEVAL GAP, ANSWER WITHHELD",
+ "data_health_seeds": [
+  "state spelled 3 ways (California/CA/Calif.)",
+  "supply_id duplicate (marked unique, isn't)",
+  "S99 orphan shop_id on ~8% roster rows",
+  "Fuel Cell surveillance stale since Mar"
+ ]
+}

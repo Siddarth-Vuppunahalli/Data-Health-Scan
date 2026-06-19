@@ -1,0 +1,18 @@
+{
+  "note": "Canonical demo questions. Ask verbatim. All data synthetic.",
+  "hazmat": [
+    {"id":"H1","ask":"Who is exposed to Cr(VI) above the action level and overdue on medical surveillance? How many, and how many work where a substitute primer is authorized?","expect":{"above_action":60,"overdue":14,"substitute_eligible":3},"screen":"surveillance-gap canvas","needs":["exposure_logs","medical_surveillance","roster_hr","TO_1-1-8_excerpt.pdf"]},
+    {"id":"H2","ask":"Why did we over-order chromated primer? Show ordered vs used vs expired and the cost.","expect":{"overorder_3yr_usd":639450,"root_cause":"5 catalog names -> 1 NSN"},"screen":"causal canvas","needs":["supply_transactions","work_orders","disposal_dtid","materials_hmid"]},
+    {"id":"H3","ask":"Where is all the chromated primer on base, and which lots expire in the next 90 days?","expect":{"locations":6,"expiring_le_90d_kt":188},"screen":"map canvas","needs":["supply_transactions","materials_hmid","TO_1-1-8_excerpt.pdf"]},
+    {"id":"H4","ask":"Who in the Fuel Cell shop is current on surveillance?","expect":{"state":"ANSWER_WITHHELD","ies":0.34,"reason":"Fuel Cell surveillance has no rows since March"},"screen":"red withheld card","needs":["medical_surveillance"]},
+    {"id":"H5","ask":"(connect workspace, ask nothing) Run a data health scan.","expect":{"score":61,"issues":["state spelled 3 ways","duplicate supply_id","~8% orphan joins","surveillance stale (Fuel Cell)"]},"screen":"data health scan"}
+  ],
+  "education": [
+    {"id":"E1","ask":"Which students are chronically absent AND below math proficiency and NOT yet in an intervention? How many, and how many are at a school with open intervention capacity?","expect":{"at_risk":60,"not_enrolled":14,"open_capacity":3},"screen":"surveillance-gap canvas (reskinned)","needs":["students","attendance","assessments_math","interventions","Intervention_Eligibility_Policy.pdf"]},
+    {"id":"E2","ask":"Why are we over-paying for software licenses? Show seats bought vs active and the waste.","expect":{"overspend_3yr_usd":396900,"root_cause":"duplicate product names double-counting"},"screen":"causal canvas","needs":["licenses_spend"]},
+    {"id":"E3","ask":"Where are the intervention gaps across schools?","expect":{},"screen":"by-school / map canvas","needs":["students","interventions","schools"]},
+    {"id":"E4","ask":"What is Carver Elementary's spring math proficiency?","expect":{"state":"ANSWER_WITHHELD","reason":"Carver scores missing; scanned memo says treat as unavailable"},"screen":"red withheld card","needs":["assessments_math","Spring_Assessment_Memo_SCAN.pdf"]},
+    {"id":"E5","ask":"(connect workspace) Run a data health scan.","expect":{"issues":["Georgia spelled 3 ways","duplicate license_id","duplicate product name","~8% orphan joins","Carver assessments missing"]},"screen":"data health scan"}
+  ],
+  "headline":"H1 and E1 are the same question in two domains -> both return 60/14/3. The join is domain-agnostic."
+}
