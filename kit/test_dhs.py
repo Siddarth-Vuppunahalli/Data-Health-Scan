@@ -119,6 +119,23 @@ def test_validity_does_not_flag_valid_values():
 
     assert findings == []
 
+def test_validity_ignores_empty_and_all_null_columns():
+    tables = {
+        "empty": pd.DataFrame({
+            "hmid_id": pd.Series(dtype="object"),
+            "last_exam": pd.Series(dtype="object"),
+        }),
+        "nulls": pd.DataFrame({
+            "hmid_id": [None, pd.NA, "", " "],
+            "last_exam": [None, pd.NA, "", " "],
+            "qty": [None, pd.NA, "", " "],
+        }),
+    }
+
+    findings = _findings_for(dhs.check_validity, tables)
+
+    assert findings == []
+
 # ---- TODO: write these RED, then implement the stub to turn them GREEN ----
 # def test_state_spelled_three_ways():
 #     # shops.state = California / CA / Calif  -> needs reference_standardization
