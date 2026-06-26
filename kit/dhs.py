@@ -56,6 +56,17 @@ POLICY = {
     "sparse_null_pct": 0.30, "sentinel_top_share": 0.40,
     "fuzzy_sim": 0.82, "outlier_z": 3.5, "orphan_pct_flag": 0.01,
     "nomenclature_names_per_key": 1,
+    "units_evidence_limit": 5,
+    "units_canonical": {
+        "mass": "mg",
+        "volume": "ml",
+        "length": "m",
+    },
+    "units_groups": {
+        "mass": {"ug", "mcg", "mg", "g", "kg", "lb", "lbs", "oz"},
+        "volume": {"ml", "l", "liter", "liters", "gal", "gallon", "gallons"},
+        "length": {"mm", "cm", "m", "in", "inch", "inches", "ft", "feet"},
+    },
 }
 SENTINELS = {"", "na", "n/a", "null", "none", "unknown", "tbd", "xxx", "-1",
              "9999", "999999", "0000-00-00", "1900-01-01", "9999-12-31"}
@@ -257,7 +268,52 @@ def check_nomenclature(tables, profs):
 def check_validity(tables,profs): return []
 def check_cross_field(tables,profs): return []
 def check_near_duplicate(tables,profs): return []
-def check_units(tables,profs): return []
+def _unit_values(series):
+    parsed=[]
+    pattern=re.compile(r"^\s*[-+]?\d+(?:\.\d+)?\s*([A-Za-z]+)\s*$")
+    for value in series:
+        if pd.isna(value):
+            continue
+        text=str(value).strip()
+        if not text:
+            continue
+        match=pattern.fullmatch(text)
+        if match:
+            parsed.append((text, match.group(1).lower()))
+    return parsed
+
+def _unit_group(unit):
+    for group,units in POLICY["units_groups"].items():
+        if unit in units:
+            return group
+    return None
+
+def check_units(tables,profs):
+    f=[]
+    for table,df in tables.items():
+        for column in df.columns:
+            parsed=_unit_values(df[column])
+            if not parsed:
+                continue
+            grouped_units={}
+            for _,unit in parsed:
+                group=_unit_group(unit)
+                if group:
+                    grouped_units.setdefault(group,set()).add(unit)
+            for group,units in grouped_units.items():
+                if len(units)>1:
+                    samples=[]
+                    for raw,unit in parsed:
+                        if unit in units and raw not in samples:
+                            samples.append(raw)
+                        if len(samples)>=POLICY["units_evidence_limit"]:
+                            break
+                    f.append(Finding("units","HIGH",table,column,
+                        {"unit_group":group,"units":sorted(units),
+                         "canonical_unit":POLICY["units_canonical"].get(group),
+                         "samples":samples},
+                        "Mixed units in one measure make totals, averages, and exposure calculations wrong"))
+    return f
 def check_sensitivity(tables,profs): return []
 def check_reference_standardization(tables,profs): return []
 def check_undocumented_join(tables,profs): return []
