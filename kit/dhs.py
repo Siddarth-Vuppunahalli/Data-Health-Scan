@@ -56,6 +56,12 @@ POLICY = {
     "sparse_null_pct": 0.30, "sentinel_top_share": 0.40,
     "fuzzy_sim": 0.82, "outlier_z": 3.5, "orphan_pct_flag": 0.01,
     "nomenclature_names_per_key": 1,
+    "mixed_format_min_nonblank": 2,
+    "mixed_format_max_value_length": 30,
+    "mixed_format_structured_share": 0.80,
+    "mixed_format_evidence_limit": 5,
+    "mixed_format_date_name_hints": ("date", "exam", "due", "hire"),
+    "mixed_format_code_name_hints": ("code", "number", "num", "serial", "tail", "lot", "bldg", "nsn", "dtid"),
 }
 SENTINELS = {"", "na", "n/a", "null", "none", "unknown", "tbd", "xxx", "-1",
              "9999", "999999", "0000-00-00", "1900-01-01", "9999-12-31"}
@@ -127,6 +133,88 @@ def check_fake_key(tables, profs):
                     {"cardinality_ratio":round(c.cardinality_ratio,3),
                      "duplicates":p.row_count-c.distinct},
                     "Duplicate records inflate counts and joins"))
+    return f
+
+def _nonblank_values(series):
+    values=[]
+    for value in series:
+        if pd.isna(value):
+            continue
+        text=str(value).strip()
+        if text:
+            values.append(text)
+    return values
+
+def _date_like_column(name):
+    return any(hint in name for hint in POLICY["mixed_format_date_name_hints"])
+
+def _looks_code_like_column(name):
+    return any(hint in name for hint in POLICY["mixed_format_code_name_hints"])
+
+def _value_pattern_signature(value):
+    out=[]
+    for ch in str(value).strip():
+        if ch.isdigit():
+            out.append("9")
+        elif ch.isalpha():
+            out.append("A")
+        else:
+            out.append(ch)
+    return "".join(out)
+
+def _date_format_signature(value):
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+        return "YYYY-MM-DD"
+    if re.fullmatch(r"\d{2}/\d{2}/\d{4}", value):
+        return "MM/DD/YYYY"
+    return None
+
+def _format_signature(name, value):
+    if _date_like_column(name):
+        date_signature=_date_format_signature(value)
+        if date_signature:
+            return date_signature
+    return _value_pattern_signature(value)
+
+def _dominant_format(counts):
+    top_count=counts.max()
+    leaders=list(counts[counts==top_count].index)
+    return leaders[0] if len(leaders)==1 else None
+
+def _looks_pattern_based(values):
+    nonblank=_nonblank_values(values)
+    if not nonblank:
+        return False
+    max_length=POLICY["mixed_format_max_value_length"]
+    compact=[v for v in nonblank if " " not in v and len(v)<=max_length]
+    structured=[
+        v for v in compact
+        if any(ch.isdigit() for ch in v) and any(ch.isalpha() for ch in v)
+    ]
+    return len(structured)/len(nonblank) >= POLICY["mixed_format_structured_share"]
+
+def check_mixed_format(tables, profs):
+    f=[]
+    for p in profs.values():
+        for c in p.columns.values():
+            name=c.name.lower()
+            if c.dtype!="string" or c.distinct<2 or name.endswith("_id"):
+                continue
+            values=_nonblank_values(tables[c.table][c.name])
+            if len(values)<POLICY["mixed_format_min_nonblank"]:
+                continue
+            if not (_date_like_column(name) or _looks_code_like_column(name) or _looks_pattern_based(values)):
+                continue
+            sigs=pd.Series([_format_signature(name,v) for v in values])
+            counts=sigs.value_counts()
+            if len(counts)<2:
+                continue
+            limit=POLICY["mixed_format_evidence_limit"]
+            patterns={pattern:int(count) for pattern,count in counts.head(limit).items()}
+            dominant=_dominant_format(counts)
+            f.append(Finding("mixed_format","MED",c.table,c.name,
+                {"patterns":patterns,"dominant_format":dominant,"suggested_format":dominant},
+                "Incompatible formats break joins, sorts, filters, and validation rules"))
     return f
 
 # ----------------------------- checks: Tier 2 (value analysis) -----------------------------
@@ -264,6 +352,7 @@ def check_undocumented_join(tables,profs): return []
 def check_stale_data(tables,profs): return []
 
 CHECKS=[check_empty,check_sparse,check_constant,check_fake_key,check_missing_key,
+        check_mixed_format,
         check_sentinel,check_dirty_categorical,check_outlier,
         check_orphaned_reference,check_key_conformity,check_nomenclature,
         check_validity,check_cross_field,check_near_duplicate,check_units,
