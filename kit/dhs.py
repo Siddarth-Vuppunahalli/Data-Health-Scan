@@ -268,9 +268,13 @@ def check_nomenclature(tables, profs):
 def check_validity(tables,profs): return []
 def check_cross_field(tables,profs): return []
 def check_near_duplicate(tables,profs): return []
+def _unit_pattern():
+    # Require the entire cell to be number+unit so free-text notes are not treated as measurements.
+    return re.compile(r"^\s*[-+]?\d+(?:\.\d+)?\s*([A-Za-z]+)\s*$")
+
 def _unit_values(series):
     parsed=[]
-    pattern=re.compile(r"^\s*[-+]?\d+(?:\.\d+)?\s*([A-Za-z]+)\s*$")
+    pattern=_unit_pattern()
     for value in series:
         if pd.isna(value):
             continue

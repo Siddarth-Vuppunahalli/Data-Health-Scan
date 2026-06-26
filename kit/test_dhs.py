@@ -69,6 +69,30 @@ def test_units_ignores_single_unit_and_unitless_numeric_columns():
 
     assert findings == []
 
+def test_units_normalizes_case_and_ignores_blanks():
+    tables = {
+        "exposure_logs": pd.DataFrame({
+            "dust_mass": ["5 MG", "0.002 g", None, pd.NA, "", " "],
+        })
+    }
+
+    findings = _findings_for(dhs.check_units, tables)
+
+    assert len(findings) == 1
+    assert findings[0].evidence.get("units") == ["g", "mg"]
+
+def test_units_ignores_free_text_and_unknown_units():
+    tables = {
+        "notes": pd.DataFrame({
+            "comment": ["mix 5 mg into sample", "handled by shop", "urgent"],
+            "rating": ["5 score", "4 score", "3 score"],
+        })
+    }
+
+    findings = _findings_for(dhs.check_units, tables)
+
+    assert findings == []
+
 # ---- TODO: write these RED, then implement the stub to turn them GREEN ----
 # def test_state_spelled_three_ways():
 #     # shops.state = California / CA / Calif  -> needs reference_standardization
