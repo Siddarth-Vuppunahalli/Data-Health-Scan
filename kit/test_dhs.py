@@ -50,6 +50,19 @@ def test_mixed_format_detects_incompatible_code_patterns():
     assert any(f.table == "assets" and f.column == "asset_code" for f in findings)
     assert not any(f.table == "assets" and f.column == "clean_code" for f in findings)
 
+def test_mixed_format_uses_value_shape_when_name_is_not_code_like():
+    tables = {
+        "assets": pd.DataFrame({
+            "plate": ["AB-1234", "AB-5678", "123-ABCD", "XY_9999"],
+            "role": ["Maintainer", "Painter", "Inspector", "Supervisor"],
+        })
+    }
+
+    findings = _findings_for(dhs.check_mixed_format, tables)
+
+    assert any(f.table == "assets" and f.column == "plate" for f in findings)
+    assert not any(f.table == "assets" and f.column == "role" for f in findings)
+
 def test_mixed_format_reports_date_split_and_dominant_fix():
     tables = {
         "exposure_logs": pd.DataFrame({
@@ -86,6 +99,37 @@ def test_mixed_format_ignores_clean_dates_and_nulls():
     findings = _findings_for(dhs.check_mixed_format, tables)
 
     assert findings == []
+
+def test_mixed_format_ignores_all_null_date_column():
+    tables = {
+        "exposure_logs": pd.DataFrame({
+            "sample_date": [None, pd.NA, "", " "],
+        })
+    }
+
+    findings = _findings_for(dhs.check_mixed_format, tables)
+
+    assert findings == []
+
+def test_mixed_format_reports_tie_without_format_suggestion():
+    tables = {
+        "supply_transactions": pd.DataFrame({
+            "transaction_date": [
+                "2026-01-01", "2026-01-02", "01/03/2026", "01/04/2026",
+            ],
+        })
+    }
+
+    findings = _findings_for(dhs.check_mixed_format, tables)
+
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.evidence.get("patterns") == {
+        "YYYY-MM-DD": 2,
+        "MM/DD/YYYY": 2,
+    }
+    assert finding.evidence.get("dominant_format") is None
+    assert finding.evidence.get("suggested_format") is None
 
 # ---- TODO: write these RED, then implement the stub to turn them GREEN ----
 # def test_state_spelled_three_ways():

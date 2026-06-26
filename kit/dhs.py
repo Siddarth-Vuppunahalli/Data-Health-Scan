@@ -186,6 +186,7 @@ def _looks_pattern_based(values):
     if not nonblank:
         return False
     max_length=POLICY["mixed_format_max_value_length"]
+    # Infer code-like columns from compact alpha+digit values even when the column name is generic.
     compact=[v for v in nonblank if " " not in v and len(v)<=max_length]
     structured=[
         v for v in compact
