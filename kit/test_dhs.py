@@ -61,6 +61,18 @@ def test_hidden_structure_detects_json_text():
     assert any(f.table == "events" and f.column == "payload" for f in findings)
     assert not any(f.table == "events" and f.column in {"status", "notes"} for f in findings)
 
+def test_hidden_structure_ignores_sparse_json_text():
+    tables = {
+        "events": pd.DataFrame({
+            "event_id": ["E1", "E2", "E3", "E4"],
+            "notes": ['{"lot": "A1"}', "plain text", "follow up", "normal"],
+        })
+    }
+
+    findings = _findings_for(dhs.check_hidden_structure, tables)
+
+    assert findings == []
+
 def test_cross_field_flags_surveillance_status_date_violations():
     tables = {
         "medical_surveillance": pd.DataFrame({
@@ -132,6 +144,20 @@ def test_cross_field_ignores_consistent_rows():
             "ordered": ["10", "20"],
             "consumed": ["5", "20"],
         }),
+    }
+
+    findings = _findings_for(dhs.check_cross_field, tables)
+
+    assert findings == []
+
+def test_cross_field_ignores_blank_or_malformed_dates():
+    tables = {
+        "medical_surveillance": pd.DataFrame({
+            "person_id": ["P1", "P2", "P3"],
+            "last_exam": ["", "not-a-date", "2025-02-15"],
+            "next_due": ["", "2026-08-15", "not-a-date"],
+            "status": ["CURRENT", "CURRENT", "OVERDUE"],
+        })
     }
 
     findings = _findings_for(dhs.check_cross_field, tables)

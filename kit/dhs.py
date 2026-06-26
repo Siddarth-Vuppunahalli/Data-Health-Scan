@@ -20,7 +20,7 @@ TODO stubs you fill in: validity, cross_field, near_duplicate, units,
 Run:  python dhs.py --data ./data
 Test: pytest test_dhs.py
 """
-import argparse, glob, json, os, re, statistics
+import argparse, glob, json, os, re, statistics, warnings
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 import pandas as pd, numpy as np
@@ -121,13 +121,16 @@ def check_missing_key(tables, profs):
                 pass
     return f  # left as a teaching stub: wire to the catalog to know if a PK is declared
 
+def _is_table_own_key(df, column):
+    first_col = df.columns[0].lower() if len(df.columns) else ""
+    return column.lower().endswith("_id") and column.lower() == first_col
+
 def check_fake_key(tables, profs):
     f=[]
     for p in profs.values():
-        first_col = tables[p.name].columns[0].lower() if len(tables[p.name].columns) else ""
         for c in p.columns.values():
-            own_key = c.name.lower().endswith("_id") and c.name.lower() == first_col
-            if own_key and c.cardinality_ratio < 1.0 and p.row_count>1:
+            # Only flag the table's own identifier; repeated foreign keys are expected in child tables.
+            if _is_table_own_key(tables[p.name], c.name) and c.cardinality_ratio < 1.0 and p.row_count>1:
                 f.append(Finding("fake_key","MED",c.table,c.name,
                     {"cardinality_ratio":round(c.cardinality_ratio,3),
                      "duplicates":p.row_count-c.distinct},
@@ -145,6 +148,13 @@ def _json_shape(value):
         return "array"
     return None
 
+def _hidden_structure_evidence(samples):
+    shapes=[shape for shape in (_json_shape(v) for v in samples) if shape]
+    if (len(shapes)>=POLICY["hidden_structure_min_parseable"] and
+            len(shapes)/max(1,len(samples))>=POLICY["hidden_structure_min_share"]):
+        return {"parseable_samples":len(shapes),"shape":max(set(shapes), key=shapes.count)}
+    return None
+
 def check_hidden_structure(tables, profs):
     f=[]
     for p in profs.values():
@@ -152,11 +162,10 @@ def check_hidden_structure(tables, profs):
             if c.dtype!="string" or c.distinct<2:
                 continue
             samples=[v for v in c.sample if str(v).strip()]
-            shapes=[shape for shape in (_json_shape(v) for v in samples) if shape]
-            if (len(shapes)>=POLICY["hidden_structure_min_parseable"] and
-                    len(shapes)/max(1,len(samples))>=POLICY["hidden_structure_min_share"]):
+            evidence=_hidden_structure_evidence(samples)
+            if evidence:
                 f.append(Finding("hidden_structure","MED",c.table,c.name,
-                    {"parseable_samples":len(shapes),"shape":max(set(shapes), key=shapes.count)},
+                    evidence,
                     "Structured data is hidden in text, so fields cannot be queried directly"))
     return f
 
@@ -293,13 +302,18 @@ def _row_sample(row):
     return str(row.iloc[0]) if len(row) else ""
 
 def _parse_date_series(series):
-    return pd.to_datetime(series, errors="coerce")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        return pd.to_datetime(series, errors="coerce")
+
+def _columns_by_lower_name(df):
+    return {c.lower():c for c in df.columns}
 
 def check_cross_field(tables,profs):
     f=[]
     as_of=pd.Timestamp(POLICY["cross_field_as_of"])
     for t,df in tables.items():
-        cols={c.lower():c for c in df.columns}
+        cols=_columns_by_lower_name(df)
 
         if "last_exam" in cols and "next_due" in cols:
             last=_parse_date_series(df[cols["last_exam"]])
@@ -312,7 +326,7 @@ def check_cross_field(tables,profs):
                     "Due dates before exam dates make surveillance timelines impossible"))
 
         if "status" in cols and "next_due" in cols:
-            status=df[cols["status"]].astype(str).str.upper()
+            status=df[cols["status"]].astype(str).str.strip().str.upper()
             due=_parse_date_series(df[cols["next_due"]])
             bad=df[
                 ((status=="CURRENT") & due.notna() & (due < as_of)) |
