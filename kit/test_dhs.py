@@ -87,6 +87,37 @@ def test_stale_data_handles_unparseable_dates():
     assert finding.evidence.get("unparseable_rows") == 1
     assert finding.evidence.get("samples") == ["P1"]
 
+def test_stale_data_uses_per_table_recency_policy():
+    tables = {
+        "work_orders": pd.DataFrame({
+            "wo_id": ["WO-1", "WO-2"],
+            "date": ["2024-05-01", "2025-05-01"],
+        })
+    }
+
+    findings = _findings_for(dhs.check_stale_data, tables)
+
+    assert len(findings) == 1
+    assert findings[0].table == "work_orders"
+    assert findings[0].evidence.get("threshold_days") == 730
+    assert findings[0].evidence.get("samples") == ["WO-1"]
+
+def test_stale_data_ignores_empty_and_all_null_columns():
+    tables = {
+        "medical_surveillance": pd.DataFrame({
+            "person_id": ["P1", "P2", "P3"],
+            "last_exam": [None, pd.NA, ""],
+        }),
+        "exposure_logs": pd.DataFrame({
+            "sample_id": pd.Series(dtype="object"),
+            "sample_date": pd.Series(dtype="object"),
+        }),
+    }
+
+    findings = _findings_for(dhs.check_stale_data, tables)
+
+    assert findings == []
+
 # ---- TODO: write these RED, then implement the stub to turn them GREEN ----
 # def test_state_spelled_three_ways():
 #     # shops.state = California / CA / Calif  -> needs reference_standardization

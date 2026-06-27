@@ -298,6 +298,7 @@ def check_stale_data(tables,profs):
     as_of=pd.Timestamp(POLICY["stale_data_as_of"])
     limit=POLICY["stale_data_evidence_limit"]
     for table,df in tables.items():
+        # Staleness is business-specific, so only configured table/date pairs are evaluated.
         for column,threshold_days in _configured_stale_columns(table).items():
             if column not in df.columns:
                 continue
