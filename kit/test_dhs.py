@@ -79,6 +79,20 @@ def test_missing_key_ignores_declared_keys_and_duplicate_ids():
 
     assert findings == []
 
+def test_missing_key_ignores_empty_and_all_null_id_columns():
+    tables = {
+        "empty": pd.DataFrame({
+            "asset_id": pd.Series(dtype="object"),
+        }),
+        "nulls": pd.DataFrame({
+            "asset_id": [None, pd.NA, "", " "],
+        }),
+    }
+
+    findings = _findings_for(dhs.check_missing_key, tables)
+
+    assert findings == []
+
 def test_locked_table_flags_unreadable_table_metadata():
     tables = {
         "readable": pd.DataFrame({"row_id": ["R1"]}),
@@ -99,6 +113,17 @@ def test_locked_table_flags_unreadable_table_metadata():
     assert finding.column == "*"
     assert finding.evidence.get("reason") == "permission denied"
     assert "incomplete" in finding.risk.lower()
+
+def test_locked_table_accepts_exception_metadata():
+    tables = {
+        "secure_export": PermissionError("permission denied"),
+    }
+
+    findings = _findings_for(dhs.check_locked_table, tables)
+
+    assert len(findings) == 1
+    assert findings[0].table == "secure_export"
+    assert findings[0].evidence.get("reason") == "permission denied"
 
 # ---- TODO: write these RED, then implement the stub to turn them GREEN ----
 # def test_state_spelled_three_ways():

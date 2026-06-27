@@ -113,11 +113,12 @@ def check_constant(tables, profs):
 def check_missing_key(tables, profs):
     f=[]
     for p in profs.values():
-        declared=POLICY["declared_primary_keys"].get(p.name,set())
+        declared=set(POLICY["declared_primary_keys"].get(p.name,set()))
         for c in p.columns.values():
             if c.name in declared:
                 continue
-            if c.name.lower().endswith("_id") and abs(c.cardinality_ratio-1.0)<1e-9 and c.distinct==p.row_count:
+            if (c.name.lower().endswith("_id") and c.distinct>0 and
+                    abs(c.cardinality_ratio-1.0)<1e-9 and c.distinct==p.row_count):
                 f.append(Finding("missing_key","LOW",c.table,c.name,
                     {"cardinality_ratio":round(c.cardinality_ratio,3),
                      "distinct":c.distinct,"rows":p.row_count},
@@ -136,6 +137,7 @@ def check_locked_table(tables, profs):
     for table,value in tables.items():
         info=_locked_table_info(value)
         if info:
+            # Locked inputs are represented as metadata so the scan can report incomplete coverage.
             f.append(Finding("locked_table","HIGH",table,"*",
                 {"reason":info.get("reason","unreadable"),
                  "path":info.get("path")},
