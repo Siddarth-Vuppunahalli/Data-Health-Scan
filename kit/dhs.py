@@ -20,7 +20,7 @@ TODO stubs you fill in: validity, cross_field, near_duplicate, units,
 Run:  python dhs.py --data ./data
 Test: pytest test_dhs.py
 """
-import argparse, glob, os, re, statistics
+import argparse, glob, os, re, statistics, warnings
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 import pandas as pd, numpy as np
@@ -56,6 +56,15 @@ POLICY = {
     "sparse_null_pct": 0.30, "sentinel_top_share": 0.40,
     "fuzzy_sim": 0.82, "outlier_z": 3.5, "orphan_pct_flag": 0.01,
     "nomenclature_names_per_key": 1,
+    "stale_data_as_of": "2026-06-12",
+    "stale_data_evidence_limit": 5,
+    "stale_data_policies": {
+        "medical_surveillance": {"last_exam": 365},
+        "exposure_logs": {"sample_date": 365},
+        "supply_transactions": {"date": 730},
+        "work_orders": {"date": 730},
+        "disposal_dtid": {"date": 730},
+    },
 }
 SENTINELS = {"", "na", "n/a", "null", "none", "unknown", "tbd", "xxx", "-1",
              "9999", "999999", "0000-00-00", "1900-01-01", "9999-12-31"}
@@ -261,7 +270,58 @@ def check_units(tables,profs): return []
 def check_sensitivity(tables,profs): return []
 def check_reference_standardization(tables,profs): return []
 def check_undocumented_join(tables,profs): return []
-def check_stale_data(tables,profs): return []
+def _row_sample(row):
+    for key in ("person_id","sample_id","supply_id","wo_id","dtid"):
+        if key in row.index and str(row[key]).strip():
+            return str(row[key])
+    return str(row.iloc[0]) if len(row) else ""
+
+def _configured_stale_columns(table):
+    return POLICY["stale_data_policies"].get(table,{})
+
+def _present_text(series):
+    out=[]
+    for value in series:
+        if pd.isna(value):
+            out.append("")
+        else:
+            out.append(str(value).strip())
+    return pd.Series(out,index=series.index)
+
+def _parse_dates(series):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        return pd.to_datetime(series,errors="coerce")
+
+def check_stale_data(tables,profs):
+    f=[]
+    as_of=pd.Timestamp(POLICY["stale_data_as_of"])
+    limit=POLICY["stale_data_evidence_limit"]
+    for table,df in tables.items():
+        for column,threshold_days in _configured_stale_columns(table).items():
+            if column not in df.columns:
+                continue
+            raw=_present_text(df[column])
+            present=raw!=""
+            parsed=_parse_dates(raw.where(present))
+
+            unparseable=df[present & parsed.isna()]
+            if len(unparseable):
+                f.append(Finding("stale_data","MED",table,column,
+                    {"rule":"parseable_date","unparseable_rows":int(len(unparseable)),
+                     "samples":[_row_sample(row) for _,row in unparseable.head(limit).iterrows()]},
+                    "Unparseable refresh dates hide whether records are stale or current"))
+
+            age_days=(as_of-parsed).dt.days
+            stale=df[present & parsed.notna() & (age_days>threshold_days)]
+            if len(stale):
+                f.append(Finding("stale_data","MED",table,column,
+                    {"rule":"max_age_days","as_of":POLICY["stale_data_as_of"],
+                     "threshold_days":threshold_days,"stale_rows":int(len(stale)),
+                     "oldest_days":int(age_days[stale.index].max()),
+                     "samples":[_row_sample(row) for _,row in stale.head(limit).iterrows()]},
+                    "Stale records need refresh before they are used for compliance or operational decisions"))
+    return f
 
 CHECKS=[check_empty,check_sparse,check_constant,check_fake_key,check_missing_key,
         check_sentinel,check_dirty_categorical,check_outlier,
