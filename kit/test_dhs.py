@@ -7,6 +7,8 @@ Intern workflow: pick a stub check, write/uncomment its test here first (red),
 implement until it passes (green), then refactor. Test-first, like the rest of the firm.
 """
 import os
+import pandas as pd
+import dhs
 from dhs import run_scan
 
 DATA = os.environ.get("DHS_DATA", "./data")
@@ -14,6 +16,14 @@ _, _, FINDINGS, SCORE = run_scan(DATA)
 
 def ids(check_id):
     return [f for f in FINDINGS if f.check_id == check_id]
+
+def _findings_for(check, tables):
+    profs = {
+        name: dhs.profile_table(name, df)
+        for name, df in tables.items()
+        if isinstance(df, pd.DataFrame)
+    }
+    return check(tables, profs)
 
 # ---- seeded issues that MUST be found (pass with the starter scaffold) ----
 def test_orphan_shop_join_found():
@@ -30,6 +40,65 @@ def test_duplicate_supply_id_found():
 
 def test_score_is_low_for_dirty_data():
     assert SCORE < 70   # this dataset is deliberately unhealthy
+
+def test_missing_key_flags_unique_id_candidate():
+    tables = {
+        "assets": pd.DataFrame({
+            "asset_id": ["A1", "A2", "A3"],
+            "name": ["one", "two", "three"],
+        })
+    }
+
+    findings = _findings_for(dhs.check_missing_key, tables)
+
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.check_id == "missing_key"
+    assert finding.severity == "LOW"
+    assert finding.table == "assets"
+    assert finding.column == "asset_id"
+    assert finding.evidence.get("cardinality_ratio") == 1.0
+    assert "primary key" in finding.risk.lower()
+
+def test_missing_key_ignores_declared_keys_and_duplicate_ids():
+    original = dhs.POLICY.get("declared_primary_keys", {}).copy()
+    dhs.POLICY["declared_primary_keys"] = {"assets": {"asset_id"}}
+    try:
+        tables = {
+            "assets": pd.DataFrame({
+                "asset_id": ["A1", "A2", "A3"],
+            }),
+            "events": pd.DataFrame({
+                "asset_id": ["A1", "A1", "A2"],
+            }),
+        }
+
+        findings = _findings_for(dhs.check_missing_key, tables)
+    finally:
+        dhs.POLICY["declared_primary_keys"] = original
+
+    assert findings == []
+
+def test_locked_table_flags_unreadable_table_metadata():
+    tables = {
+        "readable": pd.DataFrame({"row_id": ["R1"]}),
+        "secure_export": {
+            "locked": True,
+            "reason": "permission denied",
+            "path": "secure_export.csv",
+        },
+    }
+
+    findings = _findings_for(dhs.check_locked_table, tables)
+
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.check_id == "locked_table"
+    assert finding.severity == "HIGH"
+    assert finding.table == "secure_export"
+    assert finding.column == "*"
+    assert finding.evidence.get("reason") == "permission denied"
+    assert "incomplete" in finding.risk.lower()
 
 # ---- TODO: write these RED, then implement the stub to turn them GREEN ----
 # def test_state_spelled_three_ways():
