@@ -252,6 +252,53 @@ def test_locked_table_accepts_exception_metadata():
     assert findings[0].table == "secure_export"
     assert findings[0].evidence.get("reason") == "permission denied"
 
+def test_sensitivity_flags_ssn_dod_id_and_cui_with_masked_samples():
+    tables = {
+        "case_notes": pd.DataFrame({
+            "note_id": ["N1", "N2", "N3"],
+            "notes": [
+                "Employee SSN 123-45-6789 included in note",
+                "DoD ID 1234567890 copied from badge",
+                "Marked CUI//SP-PRVCY before export",
+            ],
+        })
+    }
+
+    findings = _findings_for(dhs.check_sensitivity, tables)
+
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.check_id == "sensitivity"
+    assert finding.severity == "HIGH"
+    assert finding.table == "case_notes"
+    assert finding.column == "notes"
+    assert finding.evidence.get("matches") == {
+        "cui_marking": 1,
+        "dod_id": 1,
+        "ssn": 1,
+    }
+    assert finding.evidence.get("samples") == [
+        "Employee SSN ***-**-6789 included in note",
+        "DoD ID ******7890 copied from badge",
+        "Marked CUI//*** before export",
+    ]
+    assert "exposure" in finding.risk.lower()
+
+def test_sensitivity_ignores_clean_free_text():
+    tables = {
+        "case_notes": pd.DataFrame({
+            "notes": [
+                "Employee completed training",
+                "Badge was checked without storing the number",
+                "Privacy review completed",
+            ],
+        })
+    }
+
+    findings = _findings_for(dhs.check_sensitivity, tables)
+
+    assert findings == []
+
 # ---- TODO: write these RED, then implement the stub to turn them GREEN ----
 # def test_state_spelled_three_ways():
 #     # shops.state = California / CA / Calif  -> needs reference_standardization
