@@ -343,6 +343,46 @@ def test_sensitivity_limits_masked_samples():
     assert len(findings[0].evidence.get("samples")) == dhs.POLICY["sensitivity_evidence_limit"]
     assert findings[0].evidence["samples"][0] == "SSN ***-**-1000"
 
+def test_key_conformity_flags_normalizable_nsn_length_mismatch():
+    tables = {
+        "materials_hmid": pd.DataFrame({
+            "nsn": ["8010-01-555-1234", "8010-01-555-9999"],
+        }),
+        "work_orders": pd.DataFrame({
+            "nsn": ["8010015551234", "8010015559999"],
+        }),
+    }
+
+    findings = _findings_for(dhs.check_key_conformity, tables)
+
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.check_id == "key_conformity"
+    assert finding.severity == "HIGH"
+    assert finding.column == "nsn"
+    assert set(finding.evidence.get("mismatch")) >= {"has_dash", "len_min", "len_max"}
+    assert finding.evidence.get("raw_match") == 0.0
+    assert finding.evidence.get("normalized_match") == 1.0
+    assert finding.evidence.get("examples") == [
+        {"base": "8010-01-555-1234", "other": "8010015551234"},
+        {"base": "8010-01-555-9999", "other": "8010015559999"},
+    ]
+    assert "join" in finding.risk.lower()
+
+def test_key_conformity_ignores_compatible_key_formats():
+    tables = {
+        "materials_hmid": pd.DataFrame({
+            "nsn": ["8010-01-555-1234", "8010-01-555-9999"],
+        }),
+        "work_orders": pd.DataFrame({
+            "nsn": ["8010-01-555-1234", "8010-01-555-9999"],
+        }),
+    }
+
+    findings = _findings_for(dhs.check_key_conformity, tables)
+
+    assert findings == []
+
 # ---- TODO: write these RED, then implement the stub to turn them GREEN ----
 # def test_state_spelled_three_ways():
 #     # shops.state = California / CA / Calif  -> needs reference_standardization

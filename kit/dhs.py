@@ -291,6 +291,24 @@ def _sig(series):
             "has_dash":bool(s.str.contains("-").any()),
             "all_digit":bool(s.str.replace("-","",regex=False).str.isdigit().all()) if len(s) else False}
 
+def _normalized_key_map(values, width):
+    out={}
+    for value in values:
+        raw=str(value)
+        normalized=raw.replace("-","").zfill(width)
+        out.setdefault(normalized,raw)
+    return out
+
+def _normalized_key_examples(base_values, other_values, width, limit=3):
+    base_map=_normalized_key_map(base_values,width)
+    other_map=_normalized_key_map(other_values,width)
+    examples=[]
+    for normalized in sorted(set(base_map)&set(other_map)):
+        examples.append({"base":base_map[normalized],"other":other_map[normalized]})
+        if len(examples)>=limit:
+            break
+    return examples
+
 def check_key_conformity(tables, profs):
     f=[]
     for col,ts in _key_cols(tables).items():
@@ -303,10 +321,12 @@ def check_key_conformity(tables, profs):
                 # estimate raw vs normalized (strip dashes, zero-pad) match
                 A=set(tables[base][col]); B=set(tables[other][col])
                 raw=len(A&B)/max(1,len(B))
-                norm=lambda s:{x.replace("-","").zfill(max(a["len_max"],b["len_max"])) for x in s}
+                width=max(a["len_max"],b["len_max"])
+                norm=lambda s:{x.replace("-","").zfill(width) for x in s}
                 nm=len(norm(A)&norm(B))/max(1,len(norm(B)))
                 f.append(Finding("key_conformity","HIGH",f"{base}+{other}",col,
-                    {"mismatch":mismatch,"raw_match":round(raw,2),"normalized_match":round(nm,2)},
+                    {"mismatch":mismatch,"raw_match":round(raw,2),"normalized_match":round(nm,2),
+                     "examples":_normalized_key_examples(A,B,width)},
                     "These tables can't cleanly join — rows drop silently"))
     return f
 
