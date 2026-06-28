@@ -387,6 +387,7 @@ def check_near_duplicate(tables,profs): return []
 def check_units(tables,profs): return []
 def _sensitivity_candidate(column, profile):
     name=column.lower()
+    # Sensitivity scans free text; structured keys can legitimately look like identifier patterns.
     if name.endswith("_id") or "date" in name:
         return False
     if profile.dtype=="numeric":

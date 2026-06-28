@@ -299,6 +299,50 @@ def test_sensitivity_ignores_clean_free_text():
 
     assert findings == []
 
+def test_sensitivity_ignores_structured_id_columns():
+    tables = {
+        "badges": pd.DataFrame({
+            "badge_id": ["1234567890", "2345678901"],
+            "notes": ["badge checked", "badge checked"],
+        })
+    }
+
+    findings = _findings_for(dhs.check_sensitivity, tables)
+
+    assert findings == []
+
+def test_sensitivity_ignores_empty_and_all_null_columns():
+    tables = {
+        "case_notes": pd.DataFrame({
+            "notes": [None, pd.NA, "", " "],
+        })
+    }
+
+    findings = _findings_for(dhs.check_sensitivity, tables)
+
+    assert findings == []
+
+def test_sensitivity_limits_masked_samples():
+    tables = {
+        "case_notes": pd.DataFrame({
+            "notes": [
+                "SSN 100-10-1000",
+                "SSN 100-10-1001",
+                "SSN 100-10-1002",
+                "SSN 100-10-1003",
+                "SSN 100-10-1004",
+                "SSN 100-10-1005",
+            ],
+        })
+    }
+
+    findings = _findings_for(dhs.check_sensitivity, tables)
+
+    assert len(findings) == 1
+    assert findings[0].evidence.get("matches") == {"ssn": 6}
+    assert len(findings[0].evidence.get("samples")) == dhs.POLICY["sensitivity_evidence_limit"]
+    assert findings[0].evidence["samples"][0] == "SSN ***-**-1000"
+
 # ---- TODO: write these RED, then implement the stub to turn them GREEN ----
 # def test_state_spelled_three_ways():
 #     # shops.state = California / CA / Calif  -> needs reference_standardization
