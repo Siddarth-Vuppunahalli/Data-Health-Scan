@@ -363,6 +363,10 @@ def test_key_conformity_flags_normalizable_nsn_length_mismatch():
     assert set(finding.evidence.get("mismatch")) >= {"has_dash", "len_min", "len_max"}
     assert finding.evidence.get("raw_match") == 0.0
     assert finding.evidence.get("normalized_match") == 1.0
+    assert finding.evidence.get("examples") == [
+        {"base": "8010-01-555-1234", "other": "8010015551234"},
+        {"base": "8010-01-555-9999", "other": "8010015559999"},
+    ]
     assert "join" in finding.risk.lower()
 
 def test_key_conformity_ignores_compatible_key_formats():
