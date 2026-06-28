@@ -60,6 +60,13 @@ POLICY = {
     "hidden_structure_min_share": 0.50,
     "cross_field_as_of": "2026-06-12",
     "declared_primary_keys": {},
+    "sensitivity_evidence_limit": 5,
+    "sensitivity_free_text_hints": ("note", "comment", "description", "remarks", "text"),
+    "sensitivity_patterns": {
+        "ssn": r"\b\d{3}-\d{2}-\d{4}\b",
+        "dod_id": r"\b\d{10}\b",
+        "cui_marking": r"\bCUI//[A-Z0-9/-]+\b",
+    },
 }
 SENTINELS = {"", "na", "n/a", "null", "none", "unknown", "tbd", "xxx", "-1",
              "9999", "999999", "0000-00-00", "1900-01-01", "9999-12-31"}
@@ -378,7 +385,60 @@ def check_cross_field(tables,profs):
     return f
 def check_near_duplicate(tables,profs): return []
 def check_units(tables,profs): return []
-def check_sensitivity(tables,profs): return []
+def _sensitivity_candidate(column, profile):
+    name=column.lower()
+    # Sensitivity scans free text; structured keys can legitimately look like identifier patterns.
+    if name.endswith("_id") or "date" in name:
+        return False
+    if profile.dtype=="numeric":
+        return False
+    return profile.dtype=="string" and (
+        any(hint in name for hint in POLICY["sensitivity_free_text_hints"]) or profile.len_max>=20
+    )
+
+def _mask_sensitive(text):
+    masked=str(text)
+    masked=re.sub(POLICY["sensitivity_patterns"]["ssn"], lambda m: "***-**-"+m.group(0)[-4:], masked)
+    masked=re.sub(POLICY["sensitivity_patterns"]["dod_id"], lambda m: "******"+m.group(0)[-4:], masked)
+    masked=re.sub(POLICY["sensitivity_patterns"]["cui_marking"], "CUI//***", masked)
+    return masked
+
+def _sensitivity_hits(value):
+    text=str(value)
+    hits=[]
+    for label,pattern in POLICY["sensitivity_patterns"].items():
+        if re.search(pattern,text):
+            hits.append(label)
+    return hits
+
+def check_sensitivity(tables,profs):
+    f=[]
+    limit=POLICY["sensitivity_evidence_limit"]
+    for table,df in tables.items():
+        if table not in profs:
+            continue
+        for column in df.columns:
+            profile=profs[table].columns[column]
+            if not _sensitivity_candidate(column,profile):
+                continue
+            counts={}
+            samples=[]
+            for value in df[column]:
+                if pd.isna(value) or not str(value).strip():
+                    continue
+                hits=_sensitivity_hits(value)
+                if not hits:
+                    continue
+                for hit in hits:
+                    counts[hit]=counts.get(hit,0)+1
+                masked=_mask_sensitive(value)
+                if masked not in samples and len(samples)<limit:
+                    samples.append(masked)
+            if counts:
+                f.append(Finding("sensitivity","HIGH",table,column,
+                    {"matches":dict(sorted(counts.items())),"samples":samples},
+                    "Sensitive identifiers in free text create privacy and compliance exposure"))
+    return f
 def check_reference_standardization(tables,profs): return []
 def check_undocumented_join(tables,profs): return []
 def check_stale_data(tables,profs): return []
