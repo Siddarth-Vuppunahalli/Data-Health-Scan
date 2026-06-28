@@ -20,7 +20,7 @@ TODO stubs you fill in: validity, cross_field, near_duplicate, units,
 Run:  python dhs.py --data ./data
 Test: pytest test_dhs.py
 """
-import argparse, glob, os, re, statistics
+import argparse, glob, json, os, re, statistics, warnings
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 import pandas as pd, numpy as np
@@ -56,6 +56,9 @@ POLICY = {
     "sparse_null_pct": 0.30, "sentinel_top_share": 0.40,
     "fuzzy_sim": 0.82, "outlier_z": 3.5, "orphan_pct_flag": 0.01,
     "nomenclature_names_per_key": 1,
+    "hidden_structure_min_parseable": 2,
+    "hidden_structure_min_share": 0.50,
+    "cross_field_as_of": "2026-06-12",
 }
 SENTINELS = {"", "na", "n/a", "null", "none", "unknown", "tbd", "xxx", "-1",
              "9999", "999999", "0000-00-00", "1900-01-01", "9999-12-31"}
@@ -118,15 +121,52 @@ def check_missing_key(tables, profs):
                 pass
     return f  # left as a teaching stub: wire to the catalog to know if a PK is declared
 
+def _is_table_own_key(df, column):
+    first_col = df.columns[0].lower() if len(df.columns) else ""
+    return column.lower().endswith("_id") and column.lower() == first_col
+
 def check_fake_key(tables, profs):
     f=[]
     for p in profs.values():
         for c in p.columns.values():
-            if c.name.lower().endswith("_id") and c.cardinality_ratio < 1.0 and p.row_count>1:
+            # Only flag the table's own identifier; repeated foreign keys are expected in child tables.
+            if _is_table_own_key(tables[p.name], c.name) and c.cardinality_ratio < 1.0 and p.row_count>1:
                 f.append(Finding("fake_key","MED",c.table,c.name,
                     {"cardinality_ratio":round(c.cardinality_ratio,3),
                      "duplicates":p.row_count-c.distinct},
                     "Duplicate records inflate counts and joins"))
+    return f
+
+def _json_shape(value):
+    try:
+        parsed = json.loads(str(value))
+    except (TypeError, ValueError):
+        return None
+    if isinstance(parsed, dict):
+        return "object"
+    if isinstance(parsed, list):
+        return "array"
+    return None
+
+def _hidden_structure_evidence(samples):
+    shapes=[shape for shape in (_json_shape(v) for v in samples) if shape]
+    if (len(shapes)>=POLICY["hidden_structure_min_parseable"] and
+            len(shapes)/max(1,len(samples))>=POLICY["hidden_structure_min_share"]):
+        return {"parseable_samples":len(shapes),"shape":max(set(shapes), key=shapes.count)}
+    return None
+
+def check_hidden_structure(tables, profs):
+    f=[]
+    for p in profs.values():
+        for c in p.columns.values():
+            if c.dtype!="string" or c.distinct<2:
+                continue
+            samples=[v for v in c.sample if str(v).strip()]
+            evidence=_hidden_structure_evidence(samples)
+            if evidence:
+                f.append(Finding("hidden_structure","MED",c.table,c.name,
+                    evidence,
+                    "Structured data is hidden in text, so fields cannot be queried directly"))
     return f
 
 # ----------------------------- checks: Tier 2 (value analysis) -----------------------------
@@ -255,7 +295,60 @@ def check_nomenclature(tables, profs):
 
 # TODO stubs — interns implement these next (same signature, return list[Finding]):
 def check_validity(tables,profs): return []
-def check_cross_field(tables,profs): return []
+def _row_sample(row):
+    for key in ("person_id","item_id","supply_id","wo_id"):
+        if key in row.index and str(row[key]).strip():
+            return str(row[key])
+    return str(row.iloc[0]) if len(row) else ""
+
+def _parse_date_series(series):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        return pd.to_datetime(series, errors="coerce")
+
+def _columns_by_lower_name(df):
+    return {c.lower():c for c in df.columns}
+
+def check_cross_field(tables,profs):
+    f=[]
+    as_of=pd.Timestamp(POLICY["cross_field_as_of"])
+    for t,df in tables.items():
+        cols=_columns_by_lower_name(df)
+
+        if "last_exam" in cols and "next_due" in cols:
+            last=_parse_date_series(df[cols["last_exam"]])
+            due=_parse_date_series(df[cols["next_due"]])
+            bad=df[last.notna() & due.notna() & (due < last)]
+            if len(bad):
+                f.append(Finding("cross_field","MED",t,"last_exam,next_due",
+                    {"rule":"next_due>=last_exam","violations":int(len(bad)),
+                     "samples":[_row_sample(row) for _,row in bad.head(5).iterrows()]},
+                    "Due dates before exam dates make surveillance timelines impossible"))
+
+        if "status" in cols and "next_due" in cols:
+            status=df[cols["status"]].astype(str).str.strip().str.upper()
+            due=_parse_date_series(df[cols["next_due"]])
+            bad=df[
+                ((status=="CURRENT") & due.notna() & (due < as_of)) |
+                ((status=="OVERDUE") & due.notna() & (due >= as_of))
+            ]
+            if len(bad):
+                f.append(Finding("cross_field","MED",t,"status,next_due",
+                    {"rule":"status_matches_due_date","as_of":POLICY["cross_field_as_of"],
+                     "violations":int(len(bad)),
+                     "samples":[_row_sample(row) for _,row in bad.head(5).iterrows()]},
+                    "Status labels disagree with due dates, so compliance counts are wrong"))
+
+        if "consumed" in cols and "ordered" in cols:
+            consumed=pd.to_numeric(df[cols["consumed"]], errors="coerce")
+            ordered=pd.to_numeric(df[cols["ordered"]], errors="coerce")
+            bad=df[consumed.notna() & ordered.notna() & (consumed > ordered)]
+            if len(bad):
+                f.append(Finding("cross_field","MED",t,"consumed,ordered",
+                    {"rule":"consumed<=ordered","violations":int(len(bad)),
+                     "samples":[_row_sample(row) for _,row in bad.head(5).iterrows()]},
+                    "Consumed quantities above ordered quantities break inventory accounting"))
+    return f
 def check_near_duplicate(tables,profs): return []
 def check_units(tables,profs): return []
 def check_sensitivity(tables,profs): return []
@@ -264,6 +357,7 @@ def check_undocumented_join(tables,profs): return []
 def check_stale_data(tables,profs): return []
 
 CHECKS=[check_empty,check_sparse,check_constant,check_fake_key,check_missing_key,
+        check_hidden_structure,
         check_sentinel,check_dirty_categorical,check_outlier,
         check_orphaned_reference,check_key_conformity,check_nomenclature,
         check_validity,check_cross_field,check_near_duplicate,check_units,
