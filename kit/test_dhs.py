@@ -18,7 +18,11 @@ def ids(check_id):
     return [f for f in FINDINGS if f.check_id == check_id]
 
 def _findings_for(check, tables):
-    profs = {name: dhs.profile_table(name, df) for name, df in tables.items()}
+    profs = {
+        name: dhs.profile_table(name, df)
+        for name, df in tables.items()
+        if isinstance(df, pd.DataFrame)
+    }
     return check(tables, profs)
 
 # ---- seeded issues that MUST be found (pass with the starter scaffold) ----
@@ -163,6 +167,90 @@ def test_cross_field_ignores_blank_or_malformed_dates():
     findings = _findings_for(dhs.check_cross_field, tables)
 
     assert findings == []
+
+def test_missing_key_flags_unique_id_candidate():
+    tables = {
+        "assets": pd.DataFrame({
+            "asset_id": ["A1", "A2", "A3"],
+            "name": ["one", "two", "three"],
+        })
+    }
+
+    findings = _findings_for(dhs.check_missing_key, tables)
+
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.check_id == "missing_key"
+    assert finding.severity == "LOW"
+    assert finding.table == "assets"
+    assert finding.column == "asset_id"
+    assert finding.evidence.get("cardinality_ratio") == 1.0
+    assert "primary key" in finding.risk.lower()
+
+def test_missing_key_ignores_declared_keys_and_duplicate_ids():
+    original = dhs.POLICY.get("declared_primary_keys", {}).copy()
+    dhs.POLICY["declared_primary_keys"] = {"assets": {"asset_id"}}
+    try:
+        tables = {
+            "assets": pd.DataFrame({
+                "asset_id": ["A1", "A2", "A3"],
+            }),
+            "events": pd.DataFrame({
+                "asset_id": ["A1", "A1", "A2"],
+            }),
+        }
+
+        findings = _findings_for(dhs.check_missing_key, tables)
+    finally:
+        dhs.POLICY["declared_primary_keys"] = original
+
+    assert findings == []
+
+def test_missing_key_ignores_empty_and_all_null_id_columns():
+    tables = {
+        "empty": pd.DataFrame({
+            "asset_id": pd.Series(dtype="object"),
+        }),
+        "nulls": pd.DataFrame({
+            "asset_id": [None, pd.NA, "", " "],
+        }),
+    }
+
+    findings = _findings_for(dhs.check_missing_key, tables)
+
+    assert findings == []
+
+def test_locked_table_flags_unreadable_table_metadata():
+    tables = {
+        "readable": pd.DataFrame({"row_id": ["R1"]}),
+        "secure_export": {
+            "locked": True,
+            "reason": "permission denied",
+            "path": "secure_export.csv",
+        },
+    }
+
+    findings = _findings_for(dhs.check_locked_table, tables)
+
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.check_id == "locked_table"
+    assert finding.severity == "HIGH"
+    assert finding.table == "secure_export"
+    assert finding.column == "*"
+    assert finding.evidence.get("reason") == "permission denied"
+    assert "incomplete" in finding.risk.lower()
+
+def test_locked_table_accepts_exception_metadata():
+    tables = {
+        "secure_export": PermissionError("permission denied"),
+    }
+
+    findings = _findings_for(dhs.check_locked_table, tables)
+
+    assert len(findings) == 1
+    assert findings[0].table == "secure_export"
+    assert findings[0].evidence.get("reason") == "permission denied"
 
 # ---- TODO: write these RED, then implement the stub to turn them GREEN ----
 # def test_state_spelled_three_ways():

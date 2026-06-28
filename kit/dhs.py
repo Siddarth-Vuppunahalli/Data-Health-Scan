@@ -59,6 +59,7 @@ POLICY = {
     "hidden_structure_min_parseable": 2,
     "hidden_structure_min_share": 0.50,
     "cross_field_as_of": "2026-06-12",
+    "declared_primary_keys": {},
 }
 SENTINELS = {"", "na", "n/a", "null", "none", "unknown", "tbd", "xxx", "-1",
              "9999", "999999", "0000-00-00", "1900-01-01", "9999-12-31"}
@@ -115,11 +116,37 @@ def check_constant(tables, profs):
 def check_missing_key(tables, profs):
     f=[]
     for p in profs.values():
+        declared=set(POLICY["declared_primary_keys"].get(p.name,set()))
         for c in p.columns.values():
-            if c.name.lower().endswith("_id") and abs(c.cardinality_ratio-1.0)<1e-9 and c.distinct==p.row_count:
-                # unique but is it declared PK? scaffold has no catalog, so we just note candidates
-                pass
-    return f  # left as a teaching stub: wire to the catalog to know if a PK is declared
+            if c.name in declared:
+                continue
+            if (c.name.lower().endswith("_id") and c.distinct>0 and
+                    abs(c.cardinality_ratio-1.0)<1e-9 and c.distinct==p.row_count):
+                f.append(Finding("missing_key","LOW",c.table,c.name,
+                    {"cardinality_ratio":round(c.cardinality_ratio,3),
+                     "distinct":c.distinct,"rows":p.row_count},
+                    "Column behaves like a primary key but is not declared, so joins rely on hidden assumptions"))
+    return f
+
+def _locked_table_info(value):
+    if isinstance(value,dict) and value.get("locked"):
+        return value
+    if isinstance(value,Exception):
+        return {"locked":True,"reason":str(value)}
+    return None
+
+def check_locked_table(tables, profs):
+    f=[]
+    for table,value in tables.items():
+        info=_locked_table_info(value)
+        if info:
+            # Locked inputs are represented as metadata so the scan can report incomplete coverage.
+            f.append(Finding("locked_table","HIGH",table,"*",
+                {"reason":info.get("reason","unreadable"),
+                 "path":info.get("path")},
+                "The scan is incomplete because a table could not be read"))
+    return f
+
 
 def _is_table_own_key(df, column):
     first_col = df.columns[0].lower() if len(df.columns) else ""
@@ -356,7 +383,7 @@ def check_reference_standardization(tables,profs): return []
 def check_undocumented_join(tables,profs): return []
 def check_stale_data(tables,profs): return []
 
-CHECKS=[check_empty,check_sparse,check_constant,check_fake_key,check_missing_key,
+CHECKS=[check_empty,check_sparse,check_constant,check_fake_key,check_missing_key,check_locked_table,
         check_hidden_structure,
         check_sentinel,check_dirty_categorical,check_outlier,
         check_orphaned_reference,check_key_conformity,check_nomenclature,
@@ -370,7 +397,7 @@ def score(findings):
 
 def run_scan(data_dir):
     tables=load_tables(data_dir)
-    profs={t:profile_table(t,df) for t,df in tables.items()}
+    profs={t:profile_table(t,df) for t,df in tables.items() if isinstance(df,pd.DataFrame)}
     findings=[fd for chk in CHECKS for fd in chk(tables,profs)]
     order={"HIGH":0,"MED":1,"LOW":2}
     findings.sort(key=lambda f:order[f.severity])
