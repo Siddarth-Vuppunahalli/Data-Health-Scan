@@ -56,6 +56,28 @@ POLICY = {
     "sparse_null_pct": 0.30, "sentinel_top_share": 0.40,
     "fuzzy_sim": 0.82, "outlier_z": 3.5, "orphan_pct_flag": 0.01,
     "nomenclature_names_per_key": 1,
+    "validity_date_min": "1900-01-01", "validity_date_max": "2100-12-31",
+    "validity_date_name_hints": ("date", "exam", "due", "hire"),
+    "validity_evidence_limit": 5,
+    "validity_numeric_ranges": {
+        "qty": (0, 100000),
+        "cost": (0, 10000000),
+        "usd": (0, 10000000),
+        "months": (0, 240),
+        "ug_m3": (0, 100),
+        "pel": (0, 100),
+        "action_level": (0, 100),
+    },
+    "validity_allowed_sets": {
+        "status": {"CURRENT", "OVERDUE"},
+        "above_action": {"True", "False"},
+    },
+    "validity_regex_rules": {
+        "hmid_id": r"HM-\d{3}",
+        "nsn": r"\d{4}-\d{2}-\d{3}-\d{4}",
+        "wo_id": r"WO-\d{5}",
+        "supply_id": r"SUP-\d{5}",
+    },
     "hidden_structure_min_parseable": 2,
     "hidden_structure_min_share": 0.50,
     "cross_field_as_of": "2026-06-12",
@@ -348,7 +370,90 @@ def check_nomenclature(tables, profs):
     return f
 
 # TODO stubs — interns implement these next (same signature, return list[Finding]):
-def check_validity(tables,profs): return []
+def _nonblank_values(series):
+    values=[]
+    for value in series:
+        if pd.isna(value):
+            continue
+        text=str(value).strip()
+        if text:
+            values.append(text)
+    return values
+
+def _evidence_samples(values):
+    return list(dict.fromkeys(values))[:POLICY["validity_evidence_limit"]]
+
+def _date_like_column(name):
+    return any(hint in name for hint in POLICY["validity_date_name_hints"])
+
+def _numeric_range_for(name):
+    # Source schemas vary, so policy keys match semantic name fragments such as "qty" or "usd".
+    return next((bounds for hint,bounds in POLICY["validity_numeric_ranges"].items()
+                 if hint in name),None)
+
+def _invalid_dates(values, min_date, max_date):
+    invalid=[]
+    for value in values:
+        # Parse separately to avoid inferring one format for a column that may contain malformed values.
+        parsed=pd.to_datetime(value,errors="coerce")
+        if pd.isna(parsed) or parsed<min_date or parsed>max_date:
+            invalid.append(value)
+    return invalid
+
+def check_validity(tables, profs):
+    """Detect present values that violate configured validity rules."""
+    findings=[]
+    min_date=pd.Timestamp(POLICY["validity_date_min"])
+    max_date=pd.Timestamp(POLICY["validity_date_max"])
+
+    for table,df in tables.items():
+        for column in df.columns:
+            name=column.lower()
+            values=_nonblank_values(df[column])
+            # Missing values belong to completeness checks; validity evaluates only present values.
+            if not values:
+                continue
+
+            allowed=POLICY["validity_allowed_sets"].get(name)
+            if allowed is not None:
+                invalid=[value for value in values if value not in allowed]
+                if invalid:
+                    findings.append(Finding("validity","MED",table,column,
+                        {"rule":"allowed_set","allowed":sorted(allowed),
+                         "samples":_evidence_samples(invalid)},
+                        "Values outside the allowed set make filters and counts unreliable"))
+
+            pattern=POLICY["validity_regex_rules"].get(name)
+            if pattern is not None:
+                invalid=[value for value in values if not re.fullmatch(pattern,value)]
+                if invalid:
+                    findings.append(Finding("validity","MED",table,column,
+                        {"rule":"regex_format","pattern":pattern,
+                         "samples":_evidence_samples(invalid)},
+                        "Malformed identifiers break joins, filters, and trust in clean-looking tables"))
+
+            if _date_like_column(name):
+                invalid=_invalid_dates(values,min_date,max_date)
+                if invalid:
+                    findings.append(Finding("validity","MED",table,column,
+                        {"rule":"date_plausibility","min":POLICY["validity_date_min"],
+                         "max":POLICY["validity_date_max"],
+                         "samples":_evidence_samples(invalid)},
+                        "Impossible dates break freshness, aging, and compliance logic"))
+
+            bounds=_numeric_range_for(name)
+            if bounds is not None:
+                low,high=bounds
+                parsed=pd.to_numeric(pd.Series(values),errors="coerce")
+                invalid=[raw for raw,number in zip(values,parsed)
+                         if pd.isna(number) or number<low or number>high]
+                if invalid:
+                    findings.append(Finding("validity","MED",table,column,
+                        {"rule":"numeric_range","min":low,"max":high,
+                         "samples":_evidence_samples(invalid)},
+                        "Out-of-range values can distort totals, rates, and operational decisions"))
+    return findings
+
 def _row_sample(row):
     for key in ("person_id","item_id","supply_id","wo_id"):
         if key in row.index and str(row[key]).strip():
@@ -403,6 +508,7 @@ def check_cross_field(tables,profs):
                      "samples":[_row_sample(row) for _,row in bad.head(5).iterrows()]},
                     "Consumed quantities above ordered quantities break inventory accounting"))
     return f
+
 def check_near_duplicate(tables,profs): return []
 def check_units(tables,profs): return []
 def _sensitivity_candidate(column, profile):
